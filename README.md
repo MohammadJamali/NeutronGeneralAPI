@@ -270,7 +270,7 @@ Because of ef core lazy loading, we need to include some properties like ICollec
 * Use `[BindNever]` and `[JsonIgnore]` on any readonly property.
 * Use `[Required]` on properties which must have value.
 
-#### Initialize
+## Initialize
 
 Ok, models are done, now what?
 
@@ -341,7 +341,7 @@ public class GeneralControler : NeutronGeneralAPI<Relation, XUser> {
 }
 ```
 
-##### How to query
+### How to query
 
 The query pattern is as follow:
 
@@ -382,14 +382,14 @@ Done!
 
 Have fun :)
 
-###### Prerequisites
+## Prerequisites
 
 * ThumbnailDependencyResolver is depend on SixLabors.ImageSharp and SixLabors.ImageSharp.Drawing Version "1.0.0-beta0004"
 * TargetFramework: netcoreapp2.1
 * LangVersion: 7.2
 
 
-####### TODO List
+## TODO List
 * Implement 'Explore'
 * Implement simple and complex text search
 * Implement backup and data retirement strategy
@@ -410,7 +410,7 @@ Add additional notes about how to deploy this on a live system -->
 
 Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us. -->
 
-######## Authors
+## Authors
 
 * **Mohammad Jamali** - *Initial work* - [MohammadJamali](https://github.com/MohammadJamali)
 
