@@ -2,9 +2,9 @@
 
 <!-- ![](header.png) -->
 
-A general purpose server side application which will simply do all CRUD + R(elation)S(earch) thing for models, and will make server-side application development process super fast and convenient.
+A general purpose server side application which will simply does all CRUD + R(elation)S(earch) things for models, and makes server-side application development process super rapid and convenient.
 
-Goal: Create models, config with attributes, done :)
+Goal: Creating models, Configuring attributes. {done}
 
 * **'Delete' is not implemented yet**
 * **'Search' is not implemented yet**
@@ -39,18 +39,18 @@ This attribute consist of three parts:
 2. ModelAction: {Create, Read, Update, Delete, Relate}
 3. Validator: Type of validator class
 
-as an example if you write something like `[ModelPermission (HttpRequestMethod.Get, ModelAction.Read, typeof (FreeForAllValidator))]` for class A, clients only can send a HttpGet request with Read action to NG-API. when NG-API engine receive this request, it will try to determine whether this request is valid for requested resource or not, if it was a valid request, then it will try to verify the authenticity of the request, this will achieve with Validator.
+as an example if you write something like `[ModelPermission (HttpRequestMethod.Get, ModelAction.Read, typeof (FreeForAllValidator))]` for class A, clients only can send a HttpGet request with Read action to NG-API. when NG-API engine receives this request, it will try to determine whether this request is valid for requested resource or not, if it was a valid request, then it will try to verify the authenticity of the request, this will achieve with Validator.
 
 
 What is Validator ?
 
-Validator is a class which must implemet IAccessChainValidator<TRelation> interface and `Validate` will be called by engine whenever needed!
+Validator is a class which must implement IAccessChainValidator<TRelation> interface and `Validate` will be called by engine whenever needed!
    If request fail to pass any validation with success, it will result query rejection with a bad request error!
 
 * Anything except 'true' considered as error message ...
 
-For example this validator dosen't even care about who ask this query or what is requested resource type! `FreeForAllValidator`
-says allow everything to every one
+For example, this validator doesn't even care about who ask this query or what is requested resource type! `FreeForAllValidator`
+says to allow everything to everyone.
 ```
 public class FreeForAllValidator : IAccessChainValidator<Object> {
         public dynamic Validate(
