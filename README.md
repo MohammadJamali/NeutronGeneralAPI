@@ -7,6 +7,7 @@ A general purpose server side application which will simply do all CRUD + R(elat
 Goal: Create models, config with attributes, done :)
 
 * **'Delete' is not implemented yet**
+* **'Search' is not implemented yet**
 
 ## Get started
 
