@@ -338,9 +338,10 @@ namespace ... {
 public class GeneralControler : NeutronGeneralAPI<Relation, XUser> {
     public GeneralControler (
         ApplicationDbContext dbContext,
-        UserManager<XUser> userManager,
-        IApiEngineService<Relation, XUser> engineService
-    ) : base (dbContext, userManager, engineService) { }
+            UserManager<WalleryUser> userManager,
+            IModelParser modelParser,
+            IApiEngineService<Relation, WalleryUser> engineService) : base (
+            dbContext, userManager, modelParser, engineService) { }
 }
 ```
 
