@@ -283,7 +283,9 @@ in this part you need to initialize NG-API
     * public X (ModelIntraction<TRelation> relation) : base (relation) { }
 3. Create a class and implement `IApiEngineService<TRelation, TUser>` which TRelation is Relation enum type and TUser is your IdentityUser type
 4. Call `builder.ConfigureAPIDatabase (new ApiEngineSetting ());` on `OnModelCreating (ModelBuilder builder)` in `IdentityDbContext<TUser>`
-5. Create a controller as a child of `NeutronGeneralAPI<TRelation, TUser>` [3]
+5. Call `services.AddSingleton<IApiEngineService<Relation, WalleryUser>, ApiEngineSetting>();` on `ConfigureServices (IServiceCollection services)` in `Startup.cs`
+6. Call `services.AddSingleton<IModelParser, ModelParser>();` on `ConfigureServices (IServiceCollection services)` in `Startup.cs`
+7. Create a controller as a child of `NeutronGeneralAPI<TRelation, TUser>` [3]
 
 * **Relation enum must contain `Invalid` and `Global` relations!**
 
