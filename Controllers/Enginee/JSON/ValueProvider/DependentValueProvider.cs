@@ -45,14 +45,22 @@ namespace API.Engine.JSON.ValueProvider {
         }
 
         public void SetValue (object target, object value) {
+            object currentModel = target;
+
+            if (DependentAttribute.DependentOn != null) {
+                var targetPath = DependentAttribute.DependentOn.Trim ().Split ('.');
+                foreach (var path in targetPath) {
+                    currentModel = currentModel.GetType ().GetProperty (path).GetValue (currentModel);
+                }
+            }
+
             var resolvedValue = APIUtils.InvokeMethod (DependentAttribute.Resolver,
                 "Resolve",
                 new object[] {
                     DB,
                     engineService,
                     RequesterId,
-                    DependentAttribute.DependentOn == null ?
-                    target : target.GetType ().GetProperty (DependentAttribute.DependentOn).GetValue (target),
+                    currentModel,
                     DependentAttribute.DependentOn
                 });
 

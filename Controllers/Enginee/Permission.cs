@@ -150,7 +150,6 @@ namespace API.Engine {
                         requirement.AccessChainResolver,
                         "Validate",
                         new object[] {
-                            EngineService,
                             DbContext,
                             RequesterID,
                             Request,

@@ -35,7 +35,7 @@ namespace API.PermissionValidator {
             }
 
             const int ImageMinimumBytes = 512;
-            const int ImageMaximumBytes = 510241024; // 5 * 1024 * 1024;
+            const int ImageMaximumBytes = 8388608; // 8 * 1024 * 1024;
 
             using (var image = Image.Load (buffer, out SixLabors.ImageSharp.Formats.IImageFormat format)) {
                 //-------------------------------------------
@@ -55,8 +55,8 @@ namespace API.PermissionValidator {
                 //-------------------------------------------
                 //  Attempt to read the file and check the first bytes
                 //-------------------------------------------
-                if (image.MetaData.HorizontalResolution < 50 || image.MetaData.VerticalResolution < 50)
-                    return "Request Error: image resolution is less then required";
+                // if (image.MetaData.HorizontalResolution < 50 || image.MetaData.VerticalResolution < 50)
+                //     return "Request Error: image resolution is less then required";
 
                 if (buffer.Length < ImageMinimumBytes)
                     return "Request Error: image size is less than required limit {" + ImageMinimumBytes + " B}";

@@ -7,6 +7,7 @@ namespace API.Models.Temporary {
         public string ResourceName;
         public string IdentifierName;
         public string IdentifierValue;
+        public long ExtraCode { get; set; }
 
         [JsonIgnore]
         public Type Temp_ResourceType { get; set; }

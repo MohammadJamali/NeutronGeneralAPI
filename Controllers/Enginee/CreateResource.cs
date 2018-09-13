@@ -48,6 +48,7 @@ namespace API.Engine {
                 CreatorId = permissionHandler.getRequesterID (),
                 FirstModelId = permissionHandler.getRequesterID (),
                 SecondModelId = model.GetKeyPropertyValue (),
+                IntractionType = (TRelation) Enum.Parse (typeof (TRelation), "Global"),
                 ModelAction = ModelAction.Create
             };
 
@@ -56,7 +57,7 @@ namespace API.Engine {
 
             EngineService.OnResourceCreated (request, model, intraction);
 
-            return new OkObjectResult (model);
+            return new OkResult ();
         }
     }
 }
