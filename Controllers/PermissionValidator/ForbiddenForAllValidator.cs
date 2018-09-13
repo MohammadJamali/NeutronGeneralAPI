@@ -6,7 +6,7 @@ using API.Models.Temporary;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.PermissionValidator {
-    public class FreeForAllValidator : IAccessChainValidator<Object> {
+    public class ForbiddenForAllValidator : IAccessChainValidator<Object> {
         public dynamic Validate (
             DbContext dbContext,
             string requesterID,
@@ -15,6 +15,6 @@ namespace API.PermissionValidator {
             object typeValue,
             ModelAction modelAction,
             HttpRequestMethod requestMethod,
-            Object relationType) => true;
+            Object relationType) => false;
     }
 }

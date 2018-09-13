@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using API.Enums;
 using API.Models;
 using API.Models.Temporary;
 using Microsoft.AspNetCore.Identity;

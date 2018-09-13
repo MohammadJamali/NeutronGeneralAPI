@@ -22,30 +22,17 @@ using SixLabors.ImageSharp.Formats;
 namespace API.Models {
     public class ImageModel : RootModel {
         [Required]
-        [ModelPermissionAttribute (HttpRequestMethod.Post, ModelAction.Create, typeof (ImageDataValidator))]
-        [ModelPermissionAttribute (HttpRequestMethod.Get, ModelAction.Read, typeof (ProtectImageCopyright))]
-        public string Data { get; set; }
+        [TempData]
+        [NotMapped]
+        [ModelPermission (HttpRequestMethod.Post, ModelAction.Create, typeof (ImageDataValidator))]
+        public string InputTempData { get; set; }
 
         [Required]
         [BindNever]
-        [DependentValue (HttpRequestMethod.Post, ModelAction.Create, typeof (ThumbnailDependencyResolver), DependentOn : nameof (ImageModel.Data))]
+        [DependentValue (HttpRequestMethod.Post, ModelAction.Create, typeof (ThumbnailDependencyResolver), DependentOn : nameof (ImageModel.InputTempData))]
         public string Thumbnail { get; set; }
 
         [BindNever]
         public string DataType { get; set; }
-    }
-
-    public class ProtectImageCopyright : IAccessChainValidator<Object> {
-        public dynamic Validate (
-            DbContext dbContext,
-            string requesterID,
-            IRequest request,
-            string typeName,
-            object typeValue,
-            ModelAction modelAction,
-            HttpRequestMethod requestMethod,
-            Object relationType) {
-            return false;
-        }
     }
 }

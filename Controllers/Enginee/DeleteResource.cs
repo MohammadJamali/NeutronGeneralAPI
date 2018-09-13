@@ -11,12 +11,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Engine {
-    public partial class NeutronGeneralAPI <TRelation, TUser>{
+    public partial class NeutronGeneralAPI<TRelation, TUser> {
         private dynamic DeleteResource (
             IRequest request,
             TRelation relationType,
             IRequest relatedRequest,
-            PermissionHandler permissionHandler) {
+            PermissionHandler<TRelation, TUser> permissionHandler) {
             return StatusCode (StatusCodes.Status501NotImplemented);
         }
     }

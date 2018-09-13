@@ -22,7 +22,7 @@ namespace API.Engine {
             IRequest request,
             IRequest relatedRequest,
             TRelation relationType,
-            PermissionHandler permissionHandler,
+            PermissionHandler<TRelation, TUser> permissionHandler,
             HttpRequestMethod httpRequestMethod) {
 
             var oneWayRelation = relatedRequest == null || !relatedRequest.filledWithData ();
@@ -32,9 +32,9 @@ namespace API.Engine {
             var resourceType =
                 oneWayRelation ?
                 typeof (TUser) :
-                modelParser.GetResourceType (request.ResourceName);
+                ModelParser.GetResourceType (request.ResourceName);
 
-            var relatedResourceType = modelParser.GetResourceType (relatedRequest.ResourceName);
+            var relatedResourceType = ModelParser.GetResourceType (relatedRequest.ResourceName);
 
             bool firstIdentifierNameIsKey = true;
             if (!oneWayRelation)
@@ -51,7 +51,9 @@ namespace API.Engine {
                 .Any ();
 
             if (!firstIdentifierNameIsKey || !secondIdentifierNameIsKey)
-                return BadRequest ("To create relation only key identifier is acceptable");
+                return BadRequest (new {
+                    Message = "To create relation only key identifier is acceptable"
+                });
 
             // Check whether request is exist or not
             var requestModel = oneWayRelation ?
@@ -69,7 +71,9 @@ namespace API.Engine {
                     RequestMethod: httpRequestMethod,
                     RelationType: relationType);
             if (!(resourceCheck is bool && (bool) resourceCheck))
-                return BadRequest ("Request Error: " + resourceCheck);
+                return BadRequest (new {
+                    Message = "Request Error: " + resourceCheck
+                });
 
             // Check whether related request is exist or not
             var relatedRequestModel = APIUtils.GetResource (dbContext, relatedRequest);
@@ -87,7 +91,9 @@ namespace API.Engine {
                     RelationType: relationType);
 
             if (!(relatedSourceCheck is bool && (bool) relatedSourceCheck))
-                return BadRequest ("Request Error: " + relatedSourceCheck);
+                return BadRequest (new {
+                    Message = "Request Error: " + relatedSourceCheck
+                });
 
             if (!oneWayRelation) {
                 // Check if relationType is valid for requesterID
@@ -99,7 +105,9 @@ namespace API.Engine {
                         RequestMethod: httpRequestMethod,
                         RelationType: relationType);
                 if (!(userCheck is bool && (bool) userCheck))
-                    return BadRequest ("Request Error: " + userCheck);
+                    return BadRequest (new {
+                        Message = "Request Error: " + userCheck
+                    });
             }
 
             var intractionType = EngineService.MapRelationToType (relationType.ToString ());

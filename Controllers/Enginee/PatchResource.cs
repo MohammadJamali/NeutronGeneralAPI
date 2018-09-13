@@ -23,18 +23,18 @@ namespace API.Engine {
         private dynamic PatchResource (
             IRequest request,
             HttpRequestMethod requestMethod,
-            PermissionHandler permissionHandler,
+            PermissionHandler<TRelation, TUser> permissionHandler,
             string jsonData) {
-            var jsonResolver = new APIJsonResolver {
-                DbContext = dbContext,
-                PermissionHandler = permissionHandler,
-                ModelAction = ModelAction.Create,
-                RequestMethod = requestMethod,
-                IRequest = request,
-                EngineService = EngineService,
-                IncludeKey = true,
-                IncludeBindNever = false
-            };
+            var jsonResolver = new APIJsonResolver<TRelation, TUser> {
+                    DbContext = dbContext,
+                    PermissionHandler = permissionHandler,
+                    ModelAction = ModelAction.Create,
+                    RequestMethod = requestMethod,
+                    IRequest = request,
+                    EngineService = EngineService,
+                    IncludeKey = true,
+                    IncludeBindNever = false
+                };
 
             var serializerSettings = JsonConvert.DefaultSettings ();
             serializerSettings.ContractResolver = jsonResolver;
@@ -49,10 +49,11 @@ namespace API.Engine {
             if (modelKey == null ||
                 modelKey != request.IdentifierValue ||
                 !verifyModelRelationChain (model))
-                return BadRequest (
-                    "Error: Invalid relation in received model, it can be happend when you are not " +
-                    "permited for this action or there are some invalid id(s)."
-                );
+                return BadRequest (new {
+                    Message =
+                        "Error: Invalid relation in received model, it can be happend when you are not " +
+                        "permited for this action or there are some invalid id(s)."
+                });
 
             // dbContext.Update (model);
             // ExcludeAttributes (model);

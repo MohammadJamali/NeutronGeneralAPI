@@ -13,7 +13,7 @@ namespace API.Engine {
         private dynamic ReadResource (
             IRequest request,
             HttpRequestMethod requestMethod,
-            PermissionHandler permissionHandler) {
+            PermissionHandler<TRelation, TUser> permissionHandler) {
             var result = APIUtils.GetResource (dbContext, request);
 
             if (result == null) {
@@ -21,7 +21,7 @@ namespace API.Engine {
             }
 
             var serializerSettings = JsonConvert.DefaultSettings ();
-            serializerSettings.ContractResolver = new APIJsonResolver {
+            serializerSettings.ContractResolver = new APIJsonResolver<TRelation, TUser> {
                 PermissionHandler = permissionHandler,
                 ModelAction = ModelAction.Read,
                 RequestMethod = requestMethod,

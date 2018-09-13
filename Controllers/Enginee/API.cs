@@ -32,7 +32,7 @@ namespace API.Engine {
         private readonly DbContext dbContext;
         private readonly UserManager<TUser> UserManager;
         private readonly APIUtils Utils;
-        private readonly IModelParser modelParser;
+        private readonly IModelParser ModelParser;
 
         public NeutronGeneralAPI (
             DbContext dbContext,
@@ -41,7 +41,7 @@ namespace API.Engine {
             IApiEngineService<TRelation, TUser> engineService) {
             this.UserManager = userManager;
             this.dbContext = dbContext;
-            this.modelParser = modelParser;
+            this.ModelParser = modelParser;
             this.EngineService = engineService;
 
             this.Utils = new APIUtils ();
@@ -60,14 +60,17 @@ namespace API.Engine {
                         true,
                         out var httpRequestMethod)) {
                     // Request method is not valid, it must be something like Post, Delete and ...
-                    return BadRequest ("Request method is not valid, it must be " +
-                        "{Post | Get | Patch | Delete}");
+                    return BadRequest (new {
+                        Message = "Request method is not valid, it must be " +
+                            "{Post | Get | Patch | Delete}"
+                    });
                 }
 
-                var permissionHandler = new PermissionHandler (
-                    UserManager.GetUserId (User),
-                    modelParser,
-                    dbContext);
+                var permissionHandler = new PermissionHandler<TRelation, TUser> (
+                        UserManager.GetUserId (User),
+                        ModelParser,
+                        EngineService,
+                        dbContext);
 
                 //* Security Checks *//
                 //* Check whether this set is consistent or not {HttpRequestMethod,
@@ -79,12 +82,16 @@ namespace API.Engine {
                         requestedAction,
                         relationType);
                 if (!(consistentRequest is bool && (bool) consistentRequest))
-                    return BadRequest (consistentRequest);
+                    return BadRequest (new {
+                        Message = consistentRequest
+                    });
 
                 // If this is a relation request
                 if (requestedAction == ModelAction.Relate) {
                     if (relationType == null)
-                        return BadRequest ("Relation type must be determined");
+                        return BadRequest (new {
+                            Message = "Relation type must be determined"
+                        });
 
                     if (relatedRequest == null || relatedRequest.ResourceName == null) {
                         // if this isn't a relation request, related input args are better to be empty
@@ -99,7 +106,9 @@ namespace API.Engine {
                                 requestedAction,
                                 relationType);
                         if (!(consistentRelatedRequest is bool && (bool) consistentRelatedRequest))
-                            return BadRequest (consistentRelatedRequest);
+                            return BadRequest (new {
+                                Message = consistentRelatedRequest
+                            });
                     }
                 }
 
@@ -136,7 +145,9 @@ namespace API.Engine {
                             permissionHandler,
                             httpRequestMethod);
                     default:
-                        return BadRequest ("Requested ModelAction is not supported yet");
+                        return BadRequest (new {
+                            Message = "Requested ModelAction is not supported yet"
+                        });
                 }
             } catch (Exception exception) {
                 return EngineService.OnRequestError (exception, this);
@@ -167,20 +178,26 @@ namespace API.Engine {
                 objCursor = new Cursor (requesterID, ResourceName);
             } else {
                 if (objCursor.isExpired ())
-                    return BadRequest ("Cursor time limit has been expired.");
+                    return BadRequest (new {
+                        Message = "Cursor time limit has been expired."
+                    });
 
                 if (objCursor.RequesterID != requesterID ||
                     objCursor.IssuedFor != ResourceName)
-                    return BadRequest ("Cursor has been issued for someone else.");
+                    return BadRequest (new {
+                        Message = "Cursor has been issued for someone else."
+                    });
 
                 if (objCursor.PageNumber < 1 ||
                     objCursor.PageNumber > maxPage ||
                     objCursor.ObjPerPage < 1 ||
                     objCursor.ObjPerPage > maxOPP)
-                    return BadRequest ("Cursor page number or object/page is out of bound.");
+                    return BadRequest (new {
+                        Message = "Cursor page number or object/page is out of bound."
+                    });
             }
 
-            var resourceType = modelParser.IsRangeReaderAllowed (ResourceName);
+            var resourceType = ModelParser.IsRangeReaderAllowed (ResourceName);
             if (resourceType == null)
                 return NotFound ();
 
@@ -189,8 +206,10 @@ namespace API.Engine {
 
             var rangeAttribute = resourceType.GetCustomAttribute<RangeReaderAllowedAttribute> ();
             if (endPoint > rangeAttribute.MaxObjToRead) {
-                return BadRequest ("Requested range is exceeded from resource limitations (" +
-                    rangeAttribute.MaxObjToRead + ")");
+                return BadRequest (new {
+                    Message = "Requested range is exceeded from resource limitations (" +
+                        rangeAttribute.MaxObjToRead + ")"
+                });
             }
 
             var nextCursor = string.Empty;
@@ -209,7 +228,9 @@ namespace API.Engine {
                         )
                         .EncryptString (EngineService.GetCursorEncryptionKey ());
                 } catch (Exception) {
-                    return BadRequest ("Cursor creation has been failed");
+                    return BadRequest (new {
+                        Message = "Cursor creation has been failed"
+                    });
                 }
             }
 
@@ -225,7 +246,7 @@ namespace API.Engine {
                 .Where (prop => prop.IsDefined (typeof (KeyAttribute), false))
                 .FirstOrDefault ();
 
-            var permissionHandler = new PermissionHandler (requesterID, modelParser, dbContext);
+            var permissionHandler = new PermissionHandler<TRelation, TUser> (requesterID, ModelParser, EngineService, dbContext);
             var iRequest = new IRequest {
                 ResourceName = resourceType.Name,
                 IdentifierName = rangerIdProp.Name

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using API.Enums;
 
 namespace API.Attributes {

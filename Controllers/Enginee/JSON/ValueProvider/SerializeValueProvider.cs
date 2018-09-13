@@ -2,24 +2,25 @@ using System;
 using System.Reflection;
 using API.Enums;
 using API.Models.Temporary;
+using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace API.Engine.JSON.ValueProvider {
-    public class SerializeValueProvider : IValueProvider {
+    public class SerializeValueProvider<TRelation, TUser> : IValueProvider where TUser : IdentityUser {
         protected readonly IValueProvider ValueProvider;
-        protected readonly PermissionHandler PermissionHandler;
+        protected readonly PermissionHandler<TRelation, TUser> PermissionHandler;
         protected readonly IRequest IRequest;
         protected readonly PropertyInfo PropertyType;
         protected readonly ModelAction ModelAction;
-        protected readonly int IntractionType;
+        protected readonly TRelation Relation;
         protected readonly HttpRequestMethod RequestMethod;
 
         public SerializeValueProvider (
             IValueProvider ValueProvider,
-            PermissionHandler PermissionHandler,
+            PermissionHandler<TRelation, TUser> PermissionHandler,
             IRequest IRequest,
-            int IntractionType,
+            TRelation Relation,
             PropertyInfo PropertyType,
             ModelAction modelAction,
             HttpRequestMethod requestMethod) {
@@ -29,7 +30,7 @@ namespace API.Engine.JSON.ValueProvider {
             this.PropertyType = PropertyType;
             this.ModelAction = modelAction;
             this.RequestMethod = requestMethod;
-            this.IntractionType = IntractionType;
+            this.Relation = Relation;
         }
 
         public object GetValue (object target) {
@@ -53,7 +54,7 @@ namespace API.Engine.JSON.ValueProvider {
                 Type: this.PropertyType,
                 ModelAction: this.ModelAction,
                 RequestMethod: this.RequestMethod,
-                RelationType: this.IntractionType,
+                RelationType: this.Relation,
                 TypeValue: value);
 
             if (!(permision is bool && (bool) permision)) {

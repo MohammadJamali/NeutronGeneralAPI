@@ -7,19 +7,20 @@ using API.Attributes;
 using API.Engine.JSON.ValueProvider;
 using API.Enums;
 using API.Models.Temporary;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace API.Engine.JSON {
-    public class APIJsonResolver : DefaultContractResolver {
-        public PermissionHandler PermissionHandler { get; set; }
+    public class APIJsonResolver<TRelation, TUser> : DefaultContractResolver where TUser : IdentityUser {
+        public PermissionHandler<TRelation, TUser> PermissionHandler { get; set; }
         public object EngineService { get; set; }
         public ModelAction ModelAction { get; set; }
         public HttpRequestMethod RequestMethod { get; set; }
         public IRequest IRequest { get; set; }
-        public int IntractionType { get; set; }
+        public TRelation Relation { get; set; }
         public DbContext DbContext { get; set; }
         public bool IncludeKey { get; set; }
         public bool IncludeBindNever { get; set; }
@@ -60,11 +61,11 @@ namespace API.Engine.JSON {
                         db: DbContext
                     );
                 } else if (PropertyType.IsDefined (typeof (ModelPermissionAttribute))) {
-                    jProperty.ValueProvider = new SerializeValueProvider (
+                    jProperty.ValueProvider = new SerializeValueProvider<TRelation, TUser> (
                         ValueProvider: jProperty.ValueProvider,
                         PermissionHandler: this.PermissionHandler,
                         IRequest: this.IRequest,
-                        IntractionType: this.IntractionType,
+                        Relation: this.Relation,
                         PropertyType: PropertyType,
                         modelAction: this.ModelAction,
                         requestMethod: this.RequestMethod);

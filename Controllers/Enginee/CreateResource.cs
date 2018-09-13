@@ -18,19 +18,19 @@ namespace API.Engine {
         private dynamic CreateResource (
             IRequest request,
             HttpRequestMethod requestMethod,
-            PermissionHandler permissionHandler,
+            PermissionHandler<TRelation, TUser> permissionHandler,
             string jsonData) {
 
-            var jsonResolver = new APIJsonResolver {
-                DbContext = dbContext,
-                PermissionHandler = permissionHandler,
-                ModelAction = ModelAction.Create,
-                RequestMethod = requestMethod,
-                IRequest = request,
-                IncludeKey = false,
-                IncludeBindNever = false,
-                EngineService = EngineService
-            };
+            var jsonResolver = new APIJsonResolver<TRelation, TUser> {
+                    DbContext = dbContext,
+                    PermissionHandler = permissionHandler,
+                    ModelAction = ModelAction.Create,
+                    RequestMethod = requestMethod,
+                    IRequest = request,
+                    IncludeKey = false,
+                    IncludeBindNever = false,
+                    EngineService = EngineService
+                };
 
             var serializerSettings = JsonConvert.DefaultSettings ();
             serializerSettings.ContractResolver = jsonResolver;

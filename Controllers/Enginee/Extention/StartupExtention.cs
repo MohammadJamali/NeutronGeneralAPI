@@ -5,9 +5,14 @@ using System.Reflection.Emit;
 using API.Interface;
 using API.Models;
 using API.Models.Architecture;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 
 namespace API.Engine.Extention {
     public static class DatabaseExtention {
@@ -51,6 +56,41 @@ namespace API.Engine.Extention {
                 });
                 entity.ToTable (relation + "IntractionTable");
             }
+        }
+
+        public static void ConfigureAPIService (this IServiceCollection services) {
+            services.AddMvc ()
+                .AddJsonOptions (options => {
+                    options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                    options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                    options.SerializerSettings.MaxDepth = 4;
+                    options.SerializerSettings.StringEscapeHandling = StringEscapeHandling.EscapeNonAscii;
+                });
+
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore,
+                MaxDepth = 4,
+                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
+            };
+
+            services.AddSingleton<IModelParser, ModelParser> ();
+        }
+
+        public static void ConfigureAPIHttps (this IServiceCollection services) {
+            services.Configure<MvcOptions> (options => {
+                options.Filters.Add (new RequireHttpsAttribute ());
+            });
+
+            services.AddHttpsRedirection (options => {
+                options.RedirectStatusCode = StatusCodes.Status308PermanentRedirect;
+                options.HttpsPort = 5001;
+            });
+        }
+
+        public static void ConfigureAPIHttps (this IApplicationBuilder app) {
+            app.UseHttpsRedirection ();
+            app.UseRewriter (new RewriteOptions ().AddRedirectToHttps ());
         }
     }
 }

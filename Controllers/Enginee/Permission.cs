@@ -15,18 +15,21 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Engine {
-    public class PermissionHandler {
+    public class PermissionHandler<TRelation, TUser> where TUser : IdentityUser {
         private readonly string RequesterID;
         private readonly DbContext DbContext;
         private readonly IModelParser modelParser;
+        private readonly IApiEngineService<TRelation, TUser> EngineService;
 
         public PermissionHandler (
             string RequesterID,
             IModelParser modelParser,
+            IApiEngineService<TRelation, TUser> EngineService,
             DbContext DbContext) {
             this.RequesterID = RequesterID;
             this.DbContext = DbContext;
             this.modelParser = modelParser;
+            this.EngineService = EngineService;
         }
 
         public string getRequesterID () => RequesterID;
@@ -98,24 +101,23 @@ namespace API.Engine {
                 PropertyInfo PropertyInfo,
                 object Model,
                 ModelAction ModelAction,
-                HttpRequestMethod RequestMethod,
-                int RelationType = 0) =>
+                HttpRequestMethod RequestMethod) =>
             GeneralAccessChainValidation (
                 Request: Request,
                 Type: PropertyInfo,
                 ModelAction: ModelAction,
                 RequestMethod: RequestMethod,
-                RelationType: RelationType,
+                RelationType: default (TRelation),
                 TypeValue: PropertyInfo.GetValue (Model),
                 DefaultPolicy: true);
 
-        public dynamic ModelValidation<TRelation> (
+        public dynamic ModelValidation (
                 IRequest Request,
                 Type ModelType,
                 ModelAction ModelAction,
                 HttpRequestMethod RequestMethod,
                 TRelation RelationType) =>
-            GeneralAccessChainValidation<TRelation> (
+            GeneralAccessChainValidation (
                 Request: Request,
                 Type: ModelType,
                 ModelAction: ModelAction,
@@ -124,7 +126,7 @@ namespace API.Engine {
                 TypeValue: Request.IdentifierValue,
                 DefaultPolicy: false);
 
-        public dynamic GeneralAccessChainValidation<TRelation> (
+        public dynamic GeneralAccessChainValidation (
             IRequest Request,
             MemberInfo Type,
             ModelAction ModelAction,
@@ -148,6 +150,7 @@ namespace API.Engine {
                         requirement.AccessChainResolver,
                         "Validate",
                         new object[] {
+                            EngineService,
                             DbContext,
                             RequesterID,
                             Request,
@@ -171,7 +174,7 @@ namespace API.Engine {
             return true;
         }
 
-        public dynamic ValidateRequest<TRelation> (
+        public dynamic ValidateRequest (
             HttpRequestMethod requestMethod,
             IRequest request,
             ModelAction requestedAction,
