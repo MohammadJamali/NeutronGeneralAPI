@@ -51,7 +51,7 @@ namespace API.Engine {
                 .Any ();
 
             if (!firstIdentifierNameIsKey || !secondIdentifierNameIsKey)
-                return BadRequest (new {
+                return BadRequest (new APIError {
                     Message = "To create relation only key identifier is acceptable"
                 });
 
@@ -71,7 +71,7 @@ namespace API.Engine {
                     RequestMethod: httpRequestMethod,
                     RelationType: relationType);
             if (!(resourceCheck is bool && (bool) resourceCheck))
-                return BadRequest (new {
+                return BadRequest (new APIError {
                     Message = "Request Error: " + resourceCheck
                 });
 
@@ -91,7 +91,7 @@ namespace API.Engine {
                     RelationType: relationType);
 
             if (!(relatedSourceCheck is bool && (bool) relatedSourceCheck))
-                return BadRequest (new {
+                return BadRequest (new APIError {
                     Message = "Request Error: " + relatedSourceCheck
                 });
 
@@ -105,7 +105,7 @@ namespace API.Engine {
                         RequestMethod: httpRequestMethod,
                         RelationType: relationType);
                 if (!(userCheck is bool && (bool) userCheck))
-                    return BadRequest (new {
+                    return BadRequest (new APIError {
                         Message = "Request Error: " + userCheck
                     });
             }

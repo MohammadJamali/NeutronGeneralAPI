@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using API.Attributes;
 using API.Interface;
 using API.Models;
 using API.Models.Architecture;
@@ -56,6 +57,29 @@ namespace API.Engine.Extention {
                 });
                 entity.ToTable (relation + "IntractionTable");
             }
+
+            var appAssemblies = AppDomain.CurrentDomain.GetAssemblies ().AsParallel ();
+
+            var appName = AppDomain.CurrentDomain.FriendlyName;
+            var types = appAssemblies
+                .Where (assembly => assembly.GetName ().Name.Equals (appName))
+                .FirstOrDefault ()
+                .GetExportedTypes ()
+                .Where (model =>
+                    model.IsSubclassOf (typeof (RootModel)) &&
+                    model.IsDefined (typeof (DirectAccessAllowedAttribute)))
+                .ToList ();
+
+            foreach (var type in types) {
+                typeof (DatabaseExtention)
+                .GetMethod ("ApplyDeactivatedQueryFilter")
+                    .MakeGenericMethod (type)
+                    .Invoke (null, new object[] { builder });
+            }
+        }
+
+        public static void ApplyDeactivatedQueryFilter<T> (ModelBuilder builder) where T : class {
+            builder.Entity<T> ().HasQueryFilter (b => EF.Property<bool> (b, "Deactivated") == false);
         }
 
         public static void ConfigureAPIService (this IServiceCollection services) {

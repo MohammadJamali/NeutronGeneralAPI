@@ -49,7 +49,7 @@ namespace API.Engine {
             if (modelKey == null ||
                 modelKey != request.IdentifierValue ||
                 !verifyModelRelationChain (model))
-                return BadRequest (new {
+                return BadRequest (new APIError {
                     Message =
                         "Error: Invalid relation in received model, it can be happend when you are not " +
                         "permited for this action or there are some invalid id(s)."

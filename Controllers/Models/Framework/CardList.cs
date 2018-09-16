@@ -3,6 +3,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace API.Models.Framework {
     public class CardList {
+        public int PageNumber { get; set; }
+        public string Cursor { get; set; }
         public CardListType ListType { get; set; }
         public string Title { get; set; }
         public bool HasMore { get; set; }
@@ -12,7 +14,12 @@ namespace API.Models.Framework {
 
     public enum CardListType {
         [Display (Name = "Wide")]
-        Wide, [Display (Name = "Square")]
-        Square
+        Wide,
+
+        [Display (Name = "Square")]
+        Square,
+
+        [Display (Name = "Header")]
+        Header
     }
 }

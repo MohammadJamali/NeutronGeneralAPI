@@ -50,6 +50,10 @@ namespace API.Engine.JSON.ValueProvider {
             if (DependentAttribute.DependentOn != null) {
                 var targetPath = DependentAttribute.DependentOn.Trim ().Split ('.');
                 foreach (var path in targetPath) {
+                    if (currentModel == null) {
+                        break;
+                    }
+
                     currentModel = currentModel.GetType ().GetProperty (path).GetValue (currentModel);
                 }
             }

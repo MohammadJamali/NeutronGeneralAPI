@@ -55,6 +55,7 @@ namespace API.Engine.JSON.ValueProvider {
                 ModelAction: this.ModelAction,
                 RequestMethod: this.RequestMethod,
                 RelationType: this.Relation,
+                ModelItself: target,
                 TypeValue: value);
 
             if (!(permision is bool && (bool) permision)) {

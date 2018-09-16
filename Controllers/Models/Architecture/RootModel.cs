@@ -31,10 +31,17 @@ namespace API.Models.Architecture {
         [BindNever]
         public ArtifactState ArtifactState { get; set; }
 
+        [Required]
+        [BindNever]
+        [Editable (false)]
+        [JsonIgnore]
+        public bool Deactivated { get; set; }
+
         public RootModel () {
             Id = Guid.NewGuid ();
             CreateDateTime = DateTime.Now;
             ArtifactState = ArtifactState.NotVerified;
+            Deactivated = false;
         }
     }
 }

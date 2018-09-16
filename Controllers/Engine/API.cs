@@ -15,6 +15,7 @@ using API.Engine.JSON;
 using API.Enums;
 using API.Interface;
 using API.Models;
+using API.Models.Framework;
 using API.Models.Temporary;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -60,7 +61,7 @@ namespace API.Engine {
                         true,
                         out var httpRequestMethod)) {
                     // Request method is not valid, it must be something like Post, Delete and ...
-                    return BadRequest (new {
+                    return BadRequest (new APIError {
                         Message = "Request method is not valid, it must be " +
                             "{Post | Get | Patch | Delete}"
                     });
@@ -82,14 +83,14 @@ namespace API.Engine {
                         requestedAction,
                         relationType);
                 if (!(consistentRequest is bool && (bool) consistentRequest))
-                    return BadRequest (new {
+                    return BadRequest (new APIError {
                         Message = consistentRequest
                     });
 
                 // If this is a relation request
                 if (requestedAction == ModelAction.Relate) {
                     if (relationType == null)
-                        return BadRequest (new {
+                        return BadRequest (new APIError {
                             Message = "Relation type must be determined"
                         });
 
@@ -106,7 +107,7 @@ namespace API.Engine {
                                 requestedAction,
                                 relationType);
                         if (!(consistentRelatedRequest is bool && (bool) consistentRelatedRequest))
-                            return BadRequest (new {
+                            return BadRequest (new APIError {
                                 Message = consistentRelatedRequest
                             });
                     }
@@ -145,7 +146,7 @@ namespace API.Engine {
                             permissionHandler,
                             httpRequestMethod);
                     default:
-                        return BadRequest (new {
+                        return BadRequest (new APIError {
                             Message = "Requested ModelAction is not supported yet"
                         });
                 }
@@ -160,114 +161,14 @@ namespace API.Engine {
             string ResourceName,
             string cursor
         ) {
-            Cursor objCursor = null;
-            if (cursor != null && !string.IsNullOrWhiteSpace (cursor)) {
-                try {
-                    var decryptedCursor = cursor.DecryptString (
-                        EngineService.GetCursorEncryptionKey ()
-                    );
-                    objCursor = JsonConvert.DeserializeObject<Cursor> (decryptedCursor);
-                } catch (System.Exception) { }
-            }
-
-            var maxPage = EngineService.GetMaxRengeReadPage (ResourceName);
-            var maxOPP = EngineService.GetMaxRengeReadObjectPerPage (ResourceName);
+            var rangeReader = new RangeReader<TRelation, TUser> (
+                    EngineService,
+                    ModelParser,
+                    dbContext
+                );
 
             var requesterID = UserManager.GetUserId (User);
-            if (objCursor == null) {
-                objCursor = new Cursor (requesterID, ResourceName);
-            } else {
-                if (objCursor.isExpired ())
-                    return BadRequest (new {
-                        Message = "Cursor time limit has been expired."
-                    });
-
-                if (objCursor.RequesterID != requesterID ||
-                    objCursor.IssuedFor != ResourceName)
-                    return BadRequest (new {
-                        Message = "Cursor has been issued for someone else."
-                    });
-
-                if (objCursor.PageNumber < 1 ||
-                    objCursor.PageNumber > maxPage ||
-                    objCursor.ObjPerPage < 1 ||
-                    objCursor.ObjPerPage > maxOPP)
-                    return BadRequest (new {
-                        Message = "Cursor page number or object/page is out of bound."
-                    });
-            }
-
-            var resourceType = ModelParser.IsRangeReaderAllowed (ResourceName);
-            if (resourceType == null)
-                return NotFound ();
-
-            var endPoint = objCursor.PageNumber * objCursor.ObjPerPage;
-            var startpoint = endPoint - objCursor.ObjPerPage;
-
-            var rangeAttribute = resourceType.GetCustomAttribute<RangeReaderAllowedAttribute> ();
-            if (endPoint > rangeAttribute.MaxObjToRead) {
-                return BadRequest (new {
-                    Message = "Requested range is exceeded from resource limitations (" +
-                        rangeAttribute.MaxObjToRead + ")"
-                });
-            }
-
-            var nextCursor = string.Empty;
-            if (endPoint + objCursor.ObjPerPage <= rangeAttribute.MaxObjToRead &&
-                objCursor.PageNumber <= maxPage &&
-                objCursor.ObjPerPage <= maxOPP) {
-                try {
-                    nextCursor =
-                        JsonConvert.SerializeObject (
-                            new Cursor (
-                                requesterID,
-                                ResourceName,
-                                objCursor.PageNumber + 1,
-                                objCursor.ObjPerPage
-                            )
-                        )
-                        .EncryptString (EngineService.GetCursorEncryptionKey ());
-                } catch (Exception) {
-                    return BadRequest (new {
-                        Message = "Cursor creation has been failed"
-                    });
-                }
-            }
-
-            var result = Utils.GetResourceWithRange (
-                APIUtils.GetIQueryable (dbContext, resourceType.Name),
-                startpoint,
-                endPoint) as ICollection;
-
-            if (result == null || result.Count == 0)
-                return NoContent ();
-
-            var rangerIdProp = resourceType.GetProperties ()
-                .Where (prop => prop.IsDefined (typeof (KeyAttribute), false))
-                .FirstOrDefault ();
-
-            var permissionHandler = new PermissionHandler<TRelation, TUser> (requesterID, ModelParser, EngineService, dbContext);
-            var iRequest = new IRequest {
-                ResourceName = resourceType.Name,
-                IdentifierName = rangerIdProp.Name
-            };
-
-            foreach (var item in result) {
-                iRequest.IdentifierValue = rangerIdProp.GetValue (item).ToString ();
-                permissionHandler.CheckPermissionRequirements (
-                    iRequest,
-                    ModelAction.Read,
-                    HttpRequestMethod.Get,
-                    item);
-            }
-
-            return JsonConvert.SerializeObject (
-                new {
-                    page = objCursor.PageNumber,
-                        cursor = nextCursor,
-                        cards = result
-                }
-            );
+            return rangeReader.ReadCardList (ResourceName, requesterID, cursor);
         }
 
         [HttpGet]

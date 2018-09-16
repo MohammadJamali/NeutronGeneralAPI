@@ -15,9 +15,8 @@ namespace API.Engine.MagicQuery {
 
     public class MagicReadResource<TEntity> : MagicQuery {
 
-        private Expression CreateSelect<TTarget> (ParameterExpression parameter, string fields) {
-            var bindings = fields.Split (',')
-                .Select (name => name.Trim ())
+        private Expression CreateSelect<TTarget> (ParameterExpression parameter, List<string> fields) {
+            var bindings = fields
                 .Select (name => Expression.Bind (
                     typeof (TTarget).GetProperty (name),
                     Expression.Property (parameter, name)
@@ -36,29 +35,55 @@ namespace API.Engine.MagicQuery {
                 typeof (RootModel)
             };
 
-            for (int i = 0; i < cardLevels.Count (); i++)
-                if (entityType.IsSubclassOf (cardLevels[i]))
+            for (int i = 0; i < cardLevels.Count (); i++) {
+                if (entityType.IsSubclassOf (cardLevels[i])) {
+                    var targetProperties = cardLevels[i]
+                        .GetProperties ()
+                        .Select (property => new {
+                            property.Name,
+                                property.PropertyType.IsPublic,
+                                property.CanRead,
+                                property.CanWrite
+                        })
+                        .Where (property =>
+                            property.CanRead &&
+                            property.CanWrite &&
+                            property.IsPublic)
+                        .Select (property => property.Name)
+                        .ToList ();
+
                     return CreateSelect<Card> (
                         parameter,
-                        new StringBuilder ()
-                        .AppendJoin (",",
-                            cardLevels[i]
-                            .GetProperties ()
-                            .Select (property => new {
-                                property.Name,
-                                    property.PropertyType.IsPublic,
-                                    property.CanRead,
-                                    property.CanWrite
-                            })
-                            .Where (property =>
-                                property.CanRead &&
-                                property.CanWrite &&
-                                property.IsPublic)
-                            .Select (property => property.Name)
-                            .ToList ()
-                        ).ToString ());
+                        targetProperties
+                    );
+                }
+            }
 
             throw new Exception ("This model can not be selected as a card");
+        }
+
+        private Expression CreateOptimizeSelect (ParameterExpression parameter) {
+            var targetProperties = typeof (TEntity).GetProperties ();
+            var chosenProperties = targetProperties
+                .Select (property => new {
+                    property.Name,
+                        property.PropertyType.IsPublic,
+                        property.CanRead,
+                        property.CanWrite,
+                        IsLargData = property.IsDefined (typeof (ExcludeOnSelectAttribute), true)
+                })
+                .Where (property =>
+                    property.CanRead &&
+                    property.CanWrite &&
+                    property.IsPublic &&
+                    !property.IsLargData)
+                .Select (property => property.Name)
+                .ToList ();
+
+            return CreateSelect<TEntity> (
+                parameter,
+                chosenProperties
+            );
         }
 
         private dynamic Include (
@@ -132,18 +157,28 @@ namespace API.Engine.MagicQuery {
             var expIdValue = Expression.Constant (idValue);
             var predicateBody = Expression.Equal (expIdProp, expIdValue);
 
-            var expression = Where<TEntity> (
+            var expression = Expression.Call (
+                typeof (System.Linq.Queryable),
+                "Select",
+                new Type[] {
+                    queryable.ElementType,
+                        typeof (TEntity)
+                },
+                queryable.Expression,
+                CreateOptimizeSelect (parameterExpression));
+
+            expression = Where<TEntity> (
                 typeof (System.Linq.Queryable),
                 queryable.ElementType,
-                queryable.Expression,
+                expression,
                 predicateBody,
                 parameterExpression);
 
-            expression = Include (queryable, expression);
+            // expression = Include (queryable, expression);
             expression = AsNoTracking (queryable, expression);
 
             var quary = queryable.Provider.CreateQuery<TEntity> (expression) as IQueryable<TEntity>;
-            return quary.Take (1).FirstOrDefault ();
+            return quary.Take (1).ToList ().FirstOrDefault ();
         }
     }
 }

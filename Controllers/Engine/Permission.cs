@@ -109,6 +109,7 @@ namespace API.Engine {
                 RequestMethod: RequestMethod,
                 RelationType: default (TRelation),
                 TypeValue: PropertyInfo.GetValue (Model),
+                ModelItself: Model,
                 DefaultPolicy: true);
 
         public dynamic ModelValidation (
@@ -123,6 +124,7 @@ namespace API.Engine {
                 ModelAction: ModelAction,
                 RequestMethod: RequestMethod,
                 RelationType: RelationType,
+                ModelItself: null,
                 TypeValue: Request.IdentifierValue,
                 DefaultPolicy: false);
 
@@ -132,6 +134,7 @@ namespace API.Engine {
             ModelAction ModelAction,
             HttpRequestMethod RequestMethod,
             TRelation RelationType,
+            object ModelItself,
             object TypeValue = null,
             bool DefaultPolicy = false) {
             var typeName = Type.GetType ().GetProperty ("Name").GetValue (Type) as string;
@@ -153,6 +156,7 @@ namespace API.Engine {
                             DbContext,
                             RequesterID,
                             Request,
+                            ModelItself,
                             typeName,
                             TypeValue,
                             ModelAction,
