@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 
 namespace API.Models.Framework {
     public class Card : InteractiveVisualDescriptiveModel {
+
         [TempData]
         public string ObjectType { get; set; }
 

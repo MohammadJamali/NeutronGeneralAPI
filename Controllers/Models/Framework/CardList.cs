@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using API.Enums;
 
 namespace API.Models.Framework {
     public class CardList {
@@ -9,17 +9,6 @@ namespace API.Models.Framework {
         public string Title { get; set; }
         public bool HasMore { get; set; }
         public bool UUIDAsSubtext { get; set; }
-        public ICollection<Card> Cards { get; set; }
-    }
-
-    public enum CardListType {
-        [Display (Name = "Wide")]
-        Wide,
-
-        [Display (Name = "Square")]
-        Square,
-
-        [Display (Name = "Header")]
-        Header
+        public List<Card> Cards { get; set; }
     }
 }

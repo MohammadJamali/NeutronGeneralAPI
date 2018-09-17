@@ -57,7 +57,9 @@ namespace API.Engine {
 
             EngineService.OnResourceCreated (request, model, intraction);
 
-            return new OkResult ();
+            return new OkObjectResult (new {
+                GeneratedID = model.GetKeyPropertyValue ()
+            });
         }
     }
 }

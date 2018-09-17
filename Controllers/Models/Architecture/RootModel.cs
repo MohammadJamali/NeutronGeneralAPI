@@ -22,19 +22,19 @@ namespace API.Models.Architecture {
 
         [Required]
         [BindNever]
-        [Editable (false)]
         [JsonIgnore]
+        [Editable (false)]
         public DateTime CreateDateTime { get; set; }
 
-        [JsonConverter (typeof (StringEnumConverter))]
-        [Editable (false)]
         [BindNever]
+        [Editable (false)]
+        [JsonConverter (typeof (StringEnumConverter))]
         public ArtifactState ArtifactState { get; set; }
 
         [Required]
         [BindNever]
-        [Editable (false)]
         [JsonIgnore]
+        [Editable (false)]
         public bool Deactivated { get; set; }
 
         public RootModel () {

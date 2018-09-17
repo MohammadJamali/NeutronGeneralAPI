@@ -143,7 +143,7 @@ namespace API.Engine {
             return new CardList {
                 PageNumber = objCursor.PageNumber,
                     Cursor = nextCursor,
-                    Cards = result,
+                    Cards = result.ToList (),
             };
         }
 

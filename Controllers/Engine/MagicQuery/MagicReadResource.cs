@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -15,12 +16,105 @@ namespace API.Engine.MagicQuery {
 
     public class MagicReadResource<TEntity> : MagicQuery {
 
-        private Expression CreateSelect<TTarget> (ParameterExpression parameter, List<string> fields) {
+        public static Expression CreateInnerSelect<TTarget> () {
+            var fields = typeof (TTarget).GetProperties ()
+                .Where (property =>
+                    !property.PropertyType.FullName.Contains (AppDomain.CurrentDomain.FriendlyName) &&
+                    !property.PropertyType.GetGenericArguments ().Where (generic => generic.FullName.Contains (AppDomain.CurrentDomain.FriendlyName)).Any () &&
+                    !property.IsDefined (typeof (ExcludeOnSelectAttribute))
+                ).Select (property => property.Name)
+                .ToList ();
+
+            var parameter = Expression.Parameter (typeof (TTarget));
             var bindings = fields
-                .Select (name => Expression.Bind (
-                    typeof (TTarget).GetProperty (name),
-                    Expression.Property (parameter, name)
+                .Select (property => Expression.Bind (
+                    typeof (TTarget).GetProperty (property),
+                    Expression.Property (parameter, property)
+                ))
+                .ToList ();
+
+            var newType = Expression.MemberInit (Expression.New (typeof (TTarget)), bindings);
+            return Expression.Lambda<Func<TTarget, TTarget>> (newType, parameter);
+        }
+
+        private List<MemberAssignment> BindProperties<TTarget> (
+            ParameterExpression parameter,
+            List<PropertyInfo> fields) {
+            var bindings = new List<MemberAssignment> ();
+
+            foreach (var property in fields) {
+                Expression propertyExp = Expression.Property (parameter, property);
+
+                var isICollection = property.PropertyType.FullName.Contains ("ICollection");
+                Type type;
+                if (isICollection) {
+                    type = property.PropertyType.GetGenericArguments ().FirstOrDefault ();
+                } else {
+                    type = property.PropertyType;
+                }
+
+                if (type.FullName.Contains (AppDomain.CurrentDomain.FriendlyName)) {
+                    var innerSelect = typeof (MagicReadResource<TEntity>)
+                        .GetMethod ("CreateInnerSelect")
+                        .MakeGenericMethod (type)
+                        .Invoke (null, null) as Expression;
+
+                    if (isICollection) {
+                        propertyExp = Expression.Call (
+                            typeof (System.Linq.Enumerable),
+                            nameof (System.Linq.Enumerable.Select),
+                            new Type[] {
+                                type,
+                                type
+                            },
+                            propertyExp,
+                            innerSelect);
+
+                        var pruneList = property.GetCustomAttribute<PruneListAttribute> ();
+                        if (pruneList != null) {
+                            propertyExp =
+                                Expression.Call (
+                                    typeof (System.Linq.Enumerable),
+                                    nameof (System.Linq.Enumerable.Take),
+                                    new Type[] {
+                                        type
+                                    },
+                                    propertyExp,
+                                    Expression.Constant (pruneList.Amount));
+                        }
+
+                        propertyExp =
+                            Expression.Call (
+                                typeof (System.Linq.Enumerable),
+                                nameof (System.Linq.Enumerable.ToList),
+                                new Type[] {
+                                    type
+                                },
+                                propertyExp);
+                    } else {
+                        propertyExp = innerSelect;
+                    }
+                }
+
+                bindings.Add (Expression.Bind (
+                    typeof (TTarget).GetProperty (property.Name),
+                    propertyExp
                 ));
+            }
+
+            return bindings;
+        }
+
+        private Expression CreateSelect<TTarget> (
+            ParameterExpression parameter,
+            List<PropertyInfo> fields) {
+            var mustProjectFields = fields
+                .Where (property => property.IsDefined (typeof (PruneListAttribute), true))
+                .ToList ();
+
+            var normalFields = fields.Except (mustProjectFields);
+
+            var bindings = BindProperties<TTarget> (parameter, fields);
             var newType = Expression.MemberInit (Expression.New (typeof (TTarget)), bindings);
             var lambda = Expression.Lambda<Func<TEntity, TTarget>> (newType, parameter);
             return lambda;
@@ -39,17 +133,10 @@ namespace API.Engine.MagicQuery {
                 if (entityType.IsSubclassOf (cardLevels[i])) {
                     var targetProperties = cardLevels[i]
                         .GetProperties ()
-                        .Select (property => new {
-                            property.Name,
-                                property.PropertyType.IsPublic,
-                                property.CanRead,
-                                property.CanWrite
-                        })
                         .Where (property =>
                             property.CanRead &&
                             property.CanWrite &&
-                            property.IsPublic)
-                        .Select (property => property.Name)
+                            property.PropertyType.IsPublic)
                         .ToList ();
 
                     return CreateSelect<Card> (
@@ -65,19 +152,11 @@ namespace API.Engine.MagicQuery {
         private Expression CreateOptimizeSelect (ParameterExpression parameter) {
             var targetProperties = typeof (TEntity).GetProperties ();
             var chosenProperties = targetProperties
-                .Select (property => new {
-                    property.Name,
-                        property.PropertyType.IsPublic,
-                        property.CanRead,
-                        property.CanWrite,
-                        IsLargData = property.IsDefined (typeof (ExcludeOnSelectAttribute), true)
-                })
                 .Where (property =>
                     property.CanRead &&
                     property.CanWrite &&
-                    property.IsPublic &&
-                    !property.IsLargData)
-                .Select (property => property.Name)
+                    property.PropertyType.IsPublic &&
+                    !property.IsDefined (typeof (ExcludeOnSelectAttribute), true))
                 .ToList ();
 
             return CreateSelect<TEntity> (
@@ -120,7 +199,7 @@ namespace API.Engine.MagicQuery {
                 result =
                     Expression.Call (
                         typeof (System.Linq.Queryable),
-                        "Select",
+                        nameof (System.Linq.Queryable.Select),
                         new Type[] {
                             queryable.ElementType,
                                 typeof (Card)
@@ -134,6 +213,17 @@ namespace API.Engine.MagicQuery {
                     .Take (endPoint)
                     .ToList ();
             } else {
+                result = Expression.Call (
+                    typeof (System.Linq.Queryable),
+                    nameof (System.Linq.Queryable.Select),
+                    new Type[] {
+                        queryable.ElementType,
+                            typeof (TEntity)
+                    },
+                    queryable.Expression,
+                    CreateOptimizeSelect (parameterExpression)
+                );
+
                 return (queryable.Provider
                         .CreateQuery<TEntity> (result) as IQueryable<TEntity>)
                     .Skip (startPoint)
