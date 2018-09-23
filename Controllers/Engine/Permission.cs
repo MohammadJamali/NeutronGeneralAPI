@@ -47,14 +47,14 @@ namespace API.Engine {
                 var attributeValue = attribute.GetValue (model);
                 if (attributeValue == null) continue;
 
-                var permision = ModelPropertyValidation (
+                var permission = ModelPropertyValidation (
                     Request: Request,
                     PropertyInfo: attribute,
                     Model: model,
                     ModelAction: ModelAction,
                     RequestMethod: RequestMethod);
 
-                if (!(permision is bool && (bool) permision)) {
+                if (!(permission is bool && (bool) permission)) {
                     attribute.SetValue (model, null);
                 }
             }
@@ -147,7 +147,7 @@ namespace API.Engine {
                     requirement.RequestMethod == RequestMethod)
                 .ToList ();
 
-            if (requirements != null) {
+            if (requirements != null && requirements.Count > 0) {
                 foreach (var requirement in requirements) {
                     var validation = APIUtils.InvokeMethod (
                         requirement.AccessChainResolver,
@@ -166,7 +166,7 @@ namespace API.Engine {
 
                     if (!(validation is bool && (bool) validation)) {
                         return "Requirement validation with name { " + requirement.AccessChainResolver.Name +
-                            " } has been faild with result { " + validation + " }";
+                            " } has been failed with result { " + validation + " }";
                     }
                 }
             } else if (DefaultPolicy == false)
@@ -202,23 +202,23 @@ namespace API.Engine {
                     request.IdentifierValue == null || string.IsNullOrWhiteSpace (request.IdentifierValue))
                     return "Request Error: Route parameters should not be empty";
 
-                //* Check whether this identifire is exist or not for model
-                var identifireValidator =
-                    (resourceType.GetCustomAttributes (typeof (IdentifireValidatorAttribute), true) as IdentifireValidatorAttribute[])
+                //* Check whether this identifier is exist or not for model
+                var identifierValidator =
+                    (resourceType.GetCustomAttributes (typeof (IdentifierValidatorAttribute), true) as IdentifierValidatorAttribute[])
                     .Union (
                         resourceType.GetProperties ()
-                        .Where (property => property.IsDefined (typeof (IdentifireValidatorAttribute)))
-                        .Select (validator => validator.GetCustomAttribute (typeof (IdentifireValidatorAttribute), true) as IdentifireValidatorAttribute)
+                        .Where (property => property.IsDefined (typeof (IdentifierValidatorAttribute)))
+                        .Select (validator => validator.GetCustomAttribute (typeof (IdentifierValidatorAttribute), true) as IdentifierValidatorAttribute)
                     )
                     .Where (validator => validator.PropertyName == request.IdentifierName)
                     .FirstOrDefault ();
 
-                if (identifireValidator == null || identifireValidator.Validator == null)
-                    return "Requested model identifire does not exist or it's not permitted to use it as an identifire";
+                if (identifierValidator == null || identifierValidator.Validator == null)
+                    return "Requested model identifier does not exist or it's not permitted to use it as an identifier";
 
                 var identifierValidation =
                     APIUtils.InvokeMethod (
-                        identifireValidator.Validator,
+                        identifierValidator.Validator,
                         "Validate",
                         new object[] {
                             request.IdentifierValue

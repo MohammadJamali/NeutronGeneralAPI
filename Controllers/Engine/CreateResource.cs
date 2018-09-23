@@ -44,7 +44,7 @@ namespace API.Engine {
             dbContext.Add (model);
             dbContext.SaveChanges ();
 
-            var intraction = new ModelIntraction<TRelation> {
+            var intraction = new ModelInteraction<TRelation> {
                 CreatorId = permissionHandler.getRequesterID (),
                 FirstModelId = permissionHandler.getRequesterID (),
                 SecondModelId = model.GetKeyPropertyValue (),
@@ -55,7 +55,7 @@ namespace API.Engine {
             dbContext.MagicAddIntraction (intraction, EngineService.MapRelationToType ("Global"));
             dbContext.SaveChangesAsync ();
 
-            EngineService.OnResourceCreated (request, model, intraction);
+            EngineService.OnResourceCreated (dbContext, request, model, intraction);
 
             return new OkObjectResult (new {
                 GeneratedID = model.GetKeyPropertyValue ()

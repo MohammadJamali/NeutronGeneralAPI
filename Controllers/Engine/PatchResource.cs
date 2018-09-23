@@ -6,11 +6,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
+using API.Attributes;
 using API.Engine.Extention;
 using API.Engine.JSON;
 using API.Enums;
 using API.Models;
 using API.Models.Temporary;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
@@ -44,15 +46,43 @@ namespace API.Engine {
                 request.Temp_ResourceType,
                 serializerSettings);
 
-            var modelKey = model.GetKeyPropertyValue ();
+            var oldModel = APIUtils.GetResource (dbContext, request);
+            if (oldModel == null) {
+                return new NotFoundResult ();
+            }
 
-            if (modelKey == null ||
-                modelKey != request.IdentifierValue ||
+            if (oldModel is IdentityUser) {
+                return new BadRequestObjectResult (new APIError {
+                    Message = "User model can not edited by general api, this must be handled using an special AccountController."
+                });
+            }
+
+            var modelKey = model.GetType ().GetPropertiesWithAttribute (typeof (KeyAttribute)).FirstOrDefault ();
+            if (modelKey == null) {
+                return new ForbidResult ();
+            }
+
+            if (request.IdentifierName != modelKey.Name) {
+                var identifierProperty = model.GetType ().GetCustomAttributes<IdentifierValidatorAttribute> ()
+                    .Where (attribute => attribute.PropertyName == request.IdentifierName)
+                    .FirstOrDefault ();
+
+                if (identifierProperty == null) {
+                    return new ForbidResult ();
+                }
+
+                modelKey.SetValue (model, modelKey.GetValue (oldModel));
+            }
+
+            var modelKeyValue = modelKey.GetValue (model).ToString ();
+            var isValidIdentifier = modelKeyValue != null && modelKeyValue != request.IdentifierValue;
+
+            if (!isValidIdentifier ||
                 !verifyModelRelationChain (model))
                 return BadRequest (new APIError {
                     Message =
                         "Error: Invalid relation in received model, it can be happend when you are not " +
-                        "permited for this action or there are some invalid id(s)."
+                        "permitted for this action or there are some invalid id(s)."
                 });
 
             // dbContext.Update (model);
@@ -60,17 +90,17 @@ namespace API.Engine {
 
             IncludeAttributes (model);
 
-            var intraction = new ModelIntraction<TRelation> {
+            var intraction = new ModelInteraction<TRelation> {
                 CreatorId = permissionHandler.getRequesterID (),
                 FirstModelId = permissionHandler.getRequesterID (),
-                SecondModelId = model.GetKeyPropertyValue (),
+                SecondModelId = modelKeyValue,
                 ModelAction = ModelAction.Update
             };
 
             dbContext.MagicAddIntraction (intraction, EngineService.MapRelationToType ("Global"));
             dbContext.SaveChanges ();
 
-            EngineService.OnResourcePatched (request, model);
+            EngineService.OnResourcePatched (dbContext, request, model);
 
             return new OkResult ();
         }
@@ -139,7 +169,8 @@ namespace API.Engine {
                 .Select (property => new {
                     Property = property,
                         IsReadOnly = property.IsDefined (typeof (NotMappedAttribute), true) ||
-                        property.IsDefined (typeof (BindNeverAttribute), true),
+                        property.IsDefined (typeof (BindNeverAttribute), true) ||
+                        property.IsDefined (typeof (KeyAttribute), true),
                         Value = property.GetValue (model),
                         Type = entryProperties.Contains (property.Name) ? PropertyType.Property :
                         entryCollections.Contains (property.Name) ? PropertyType.Collection :
@@ -178,7 +209,7 @@ namespace API.Engine {
 
         /// <summary>
         /// This function will try to get all app (not system) classes in input param object
-        /// and verify whether these objects are exist and blong to input param object or not
+        /// and verify whether these objects are exist and belong to input param object or not
         ///
         /// As an example:
         /// class A { B; C; string; int;}
@@ -186,7 +217,7 @@ namespace API.Engine {
         ///
         /// if A is input param, at first this function will list all app classes in A which is
         /// {B, C} and verify if B exist and there is a valid connection bitween A and B, and will
-        /// do the same for C, and recurcivly will check C and D, this will help to find out if
+        /// do the same for C, and recursively will check C and D, this will help to find out if
         /// somebody wants to change model Ids on update action and change database structure,
         /// so we can prevent it.
         ///

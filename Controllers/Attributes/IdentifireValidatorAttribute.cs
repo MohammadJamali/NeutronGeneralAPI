@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 namespace API.Attributes {
     /// <summary>
     /// Any CRUD request must be queried by model's key property, when key property is not
-    /// accesseble directly (for example when user model extent from IdentityUser<TKey>) you
+    /// accessible directly (for example when user model extent from IdentityUser<TKey>) you
     /// can specify it by using this attribute, Or you can simply let users generate select
-    /// queries by more than one atribute (This atribute must be uniqe for any user)
+    /// queries by more than one atribute (This atribute must be unique for any user)
     ///
     /// <param name="PropertyName">Name of that property</param>
     /// <param name="Validator">Any query identifier value must be verify before use it
@@ -19,22 +19,22 @@ namespace API.Attributes {
     ///
     /// برای ایجاد یک رابطه تنها صفت کلید اصلی قابل قبول خواهد بود
     ///
-    /// <seealso cref="EmailIdentifireValidator"/>
+    /// <seealso cref="EmailIdentifierValidator"/>
     /// <seealso cref="FreeForAllValidator"/>
-    /// <seealso cref="GuidIdentifireValidator"/>
+    /// <seealso cref="GuidIdentifierValidator"/>
     /// <seealso cref="ImageDataValidator"/>
     /// </summary>
     [AttributeUsage (AttributeTargets.Class | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
-    public sealed class IdentifireValidatorAttribute : PermissionAttribute {
+    public sealed class IdentifierValidatorAttribute : PermissionAttribute {
         public string PropertyName { get; set; }
         public Type Validator { get; set; }
 
-        public IdentifireValidatorAttribute (Type validator, [CallerMemberName] string propertyName = null) {
+        public IdentifierValidatorAttribute (Type validator, [CallerMemberName] string propertyName = null) {
             this.Validator = validator;
             this.PropertyName = propertyName;
         }
 
-        public IdentifireValidatorAttribute (String propertyName, Type validator) {
+        public IdentifierValidatorAttribute (String propertyName, Type validator) {
             this.Validator = validator;
             this.PropertyName = propertyName;
         }

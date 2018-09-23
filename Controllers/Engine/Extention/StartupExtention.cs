@@ -42,13 +42,14 @@ namespace API.Engine.Extention {
                 builder.Ignore<RootModel> ();
                 builder.Ignore<DescriptiveModel> ();
                 builder.Ignore<VisualDescriptiveModel> ();
-                builder.Ignore<ModelIntraction<TRelation>> ();
+                builder.Ignore<ModelInteraction<TRelation>> ();
             }
 
             var relations = Enum.GetNames (typeof (TRelation));
 
             foreach (var relation in relations) {
-                var entity = builder.Entity (engineService.MapRelationToType (relation));
+                var intractionType = engineService.MapRelationToType (relation);
+                var entity = builder.Entity (intractionType);
                 entity.HasKey (new string[] {
                     "FirstModelId",
                     "SecondModelId",
@@ -56,6 +57,10 @@ namespace API.Engine.Extention {
                     "IntractionType"
                 });
                 entity.ToTable (relation + "IntractionTable");
+                typeof (DatabaseExtention)
+                .GetMethod ("ApplyValidIntractionQueryFilter")
+                    .MakeGenericMethod (intractionType)
+                    .Invoke (null, new object[] { builder });
             }
 
             var appAssemblies = AppDomain.CurrentDomain.GetAssemblies ().AsParallel ();
@@ -80,6 +85,17 @@ namespace API.Engine.Extention {
 
         public static void ApplyDeactivatedQueryFilter<T> (ModelBuilder builder) where T : class {
             builder.Entity<T> ().HasQueryFilter (b => EF.Property<bool> (b, "Deactivated") == false);
+        }
+
+        public static void ApplyValidIntractionQueryFilter<T> (ModelBuilder builder) where T : class {
+            builder.Entity<T> ().HasQueryFilter (b =>
+                EF.Property<bool> (b, "Valid") == true &&
+                (
+                    (EF.Property<DateTime?> (b, "ValidUntil") == null || EF.Property<DateTime?> (b, "ValidUntil").HasValue == false) ||
+                    (EF.Property<DateTime?> (b, "ValidUntil") != null && EF.Property<DateTime?> (b, "ValidUntil").HasValue &&
+                        DateTime.Now.CompareTo (EF.Property<DateTime?> (b, "ValidUntil")) < 0)
+                )
+            );
         }
 
         public static void ConfigureAPIService (this IServiceCollection services) {

@@ -17,7 +17,7 @@ namespace API.Models.Architecture {
         [Required]
         [BindNever]
         [Editable (false)]
-        [IdentifireValidator (typeof (GuidIdentifireValidator))]
+        [IdentifierValidator (typeof (GuidIdentifierValidator))]
         public Guid Id { get; set; }
 
         [Required]

@@ -53,7 +53,8 @@ namespace API.Engine.MagicQuery {
                     type = property.PropertyType;
                 }
 
-                if (type.FullName.Contains (AppDomain.CurrentDomain.FriendlyName)) {
+                if (type.IsEnum == false &&
+                    type.FullName.Contains (AppDomain.CurrentDomain.FriendlyName)) {
                     var innerSelect = typeof (MagicReadResource<TEntity>)
                         .GetMethod ("CreateInnerSelect")
                         .MakeGenericMethod (type)

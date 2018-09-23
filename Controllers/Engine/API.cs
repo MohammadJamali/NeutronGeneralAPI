@@ -17,6 +17,8 @@ using API.Interface;
 using API.Models;
 using API.Models.Framework;
 using API.Models.Temporary;
+using AspNet.Security.OAuth.Validation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -28,6 +30,8 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace API.Engine {
+
+    [Authorize (AuthenticationSchemes = "Identity.Application," + OAuthValidationDefaults.AuthenticationScheme)]
     public abstract partial class NeutronGeneralAPI<TRelation, TUser> : Controller where TUser : IdentityUser {
         private readonly IApiEngineService<TRelation, TUser> EngineService;
         private readonly DbContext dbContext;
@@ -55,7 +59,7 @@ namespace API.Engine {
             IRequest relatedRequest,
             string jsonObject) {
             try {
-                // Parse type of request method to somwthing we can understand
+                // Parse type of request method to something we can understand
                 if (!Enum.TryParse<HttpRequestMethod> (
                         Request.Method,
                         true,
@@ -113,7 +117,7 @@ namespace API.Engine {
                     }
                 }
 
-                //* Get which user is tring to send this request
+                //* Get which user is trying to send this request
                 switch (requestedAction) {
                     case ModelAction.Create:
                         return CreateResource (
@@ -151,11 +155,12 @@ namespace API.Engine {
                         });
                 }
             } catch (Exception exception) {
-                return EngineService.OnRequestError (exception, this);
+                return EngineService.OnRequestError (dbContext, exception, this);
             }
         }
 
         [HttpGet]
+        [AllowAnonymous]
         [Route (template: "api/cards/{ResourceName}")]
         public dynamic RangeReader (
             string ResourceName,
@@ -172,6 +177,7 @@ namespace API.Engine {
         }
 
         [HttpGet]
+        [AllowAnonymous]
         [Route (template: "api/search/{ResourceName}/{PropertyName}/{FirstValue}/{SecondValue?}")]
         public dynamic Search (
             string ResourceName,

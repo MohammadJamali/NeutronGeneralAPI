@@ -7,7 +7,7 @@ using API.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Models {
-    public class ModelIntraction<TRelation> {
+    public class ModelInteraction<TRelation> {
         [Key]
         [Required]
         public string CreatorId { get; set; }
@@ -38,7 +38,7 @@ namespace API.Models {
 
         public string Information { get; set; }
 
-        public ModelIntraction (ModelIntraction<TRelation> intraction) {
+        public ModelInteraction (ModelInteraction<TRelation> intraction) {
             this.CreatorId = intraction.CreatorId;
             this.FirstModelId = intraction.FirstModelId;
             this.SecondModelId = intraction.SecondModelId;
@@ -51,7 +51,7 @@ namespace API.Models {
             this.Information = intraction.Information;
         }
 
-        public ModelIntraction () {
+        public ModelInteraction () {
             CreateDateTime = DateTime.Now;
             Valid = true;
         }

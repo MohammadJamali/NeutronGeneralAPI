@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 
 namespace API.Engine.Extention {
     public static class Extentions {
-        public static IEnumerable<dynamic> GetPropertiesWithAttribute (this Type type, Type attributeType) =>
+        public static IEnumerable<PropertyInfo> GetPropertiesWithAttribute (this Type type, Type attributeType) =>
             type.GetProperties ()
             .Where (prop => prop.IsDefined (attributeType, true))
             .ToList ();

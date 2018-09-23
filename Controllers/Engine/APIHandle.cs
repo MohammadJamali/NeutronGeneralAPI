@@ -2,11 +2,13 @@ using System.IO;
 using System.Text;
 using API.Enums;
 using API.Models.Temporary;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Engine {
     public partial class NeutronGeneralAPI<TRelation, TUser> {
         [HttpGet, HttpPost, HttpPatch, HttpDelete]
+        [AllowAnonymous]
         [Route (template: "api/{resourceName}/{identifierName}/" +
             "{identifierValue}/{requestedAction}/{relationType?}/" +
             "{relatedResourceName?}/{relatedIdentifierName?}/" +
@@ -36,6 +38,7 @@ namespace API.Engine {
             new StreamReader (Request.Body, Encoding.UTF8).ReadToEnd ());
 
         [HttpGet, HttpPost]
+        [AllowAnonymous]
         [Route (template: "api/{resourceName}/{requestedAction}")]
         public IActionResult Handle (
             string resourceName,
@@ -53,6 +56,7 @@ namespace API.Engine {
             new StreamReader (Request.Body, Encoding.UTF8).ReadToEnd ());
 
         [HttpDelete, HttpPost]
+        [AllowAnonymous]
         [Route (template: "api/{resourceName}/{requestedAction}/{relationType}")]
         public IActionResult Handle (
             string resourceName,

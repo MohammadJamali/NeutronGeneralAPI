@@ -133,7 +133,7 @@ namespace API.Engine {
                 if (relation != null)
                     return new OkObjectResult (relation);
 
-                relation = new ModelIntraction<TRelation> {
+                relation = new ModelInteraction<TRelation> {
                     CreatorId = permissionHandler.getRequesterID (),
                     FirstModelId = FirstModelId,
                     SecondModelId = SecondModelId,
@@ -142,7 +142,7 @@ namespace API.Engine {
 
                 MagicExtentions.MagicAddIntraction (queryable, relation, intractionType);
 
-                EngineService.OnRelationCreated (request, relatedRequest, relation);
+                EngineService.OnRelationCreated (dbContext, request, relatedRequest, relation);
             } else if (httpRequestMethod == HttpRequestMethod.Delete) {
                 if (relation == null)
                     return new OkResult ();
@@ -154,7 +154,7 @@ namespace API.Engine {
                 relation.Information = "Extinct by " + permissionHandler.getRequesterID ();
 
                 dbContext.MagicAddIntraction (relation as object, EngineService.MapRelationToType ("Invalid"));
-                EngineService.OnRelationDeleted (request, relatedRequest, relation);
+                EngineService.OnRelationDeleted (dbContext, request, relatedRequest, relation);
             } else {
                 return BadRequest ();
             }

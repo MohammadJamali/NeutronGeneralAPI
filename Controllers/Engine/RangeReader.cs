@@ -44,8 +44,8 @@ namespace API.Engine {
                 } catch (Exception) { }
             }
 
-            var maxPage = engineService.GetMaxRengeReadPage (resourceName);
-            var maxOPP = engineService.GetMaxRengeReadObjectPerPage (resourceName);
+            var maxPage = engineService.GetMaxRangeReadPage (resourceName);
+            var maxOPP = engineService.GetMaxRangeReadObjectPerPage (resourceName);
 
             if (objCursor == null) {
                 objCursor = new Cursor (requesterID, resourceName);

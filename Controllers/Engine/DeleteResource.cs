@@ -62,6 +62,8 @@ namespace API.Engine {
             dbContext.Entry (resource).Property (nameof (RootModel.Deactivated)).IsModified = true;
             dbContext.SaveChanges ();
 
+            EngineService.OnResourceDeleted (dbContext, request, resource);
+
             return new OkResult ();
         }
     }

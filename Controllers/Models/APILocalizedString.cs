@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -13,11 +14,7 @@ namespace API.Models {
     public class APILocalizedString {
         [Key]
         [BindNever]
-        public int Id { get; set; }
-
-        [BindNever]
-        [NotMapped]
-        public Message? Code { get; set; } = null;
+        public Guid Id { get; set; }
 
         [Required]
         public SupportedCulture SupportedCulture { get; set; }
@@ -25,13 +22,8 @@ namespace API.Models {
         [Required]
         public string Text { get; set; }
 
-        public static APILocalizedString Get (Message code,
-            IStringLocalizer stringLocalizer, SupportedCulture culture) {
-            return new APILocalizedString () {
-                Code = code,
-                    Text = stringLocalizer[code.ToString ()],
-                    SupportedCulture = culture
-            };
+        public APILocalizedString () {
+            Id = Guid.NewGuid ();
         }
     }
 

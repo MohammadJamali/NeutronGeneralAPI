@@ -32,7 +32,7 @@ namespace API.Engine {
                 IncludeKey = true
             };
 
-            EngineService.OnResourceReaded (request, result);
+            EngineService.OnResourceRead (dbContext, request, result);
 
             Response.Headers.Add ("Server", "NG-API");
 

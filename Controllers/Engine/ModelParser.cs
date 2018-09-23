@@ -11,7 +11,6 @@ namespace API.Engine {
     public sealed class ModelParser : IModelParser {
         private ICollection<Type> DirectAccessAllowed { get; set; }
         private ICollection<Type> RangeReaderAllowed { get; set; }
-        private ICollection<Searchable> Searchables;
 
         public ModelParser () {
             var appAssemblies = AppDomain.CurrentDomain.GetAssemblies ().AsParallel ();
@@ -30,30 +29,7 @@ namespace API.Engine {
                 .Where (assembly =>
                     assembly.IsDefined (typeof (RangeReaderAllowedAttribute), false))
                 .ToList ();
-
-            // var searchables = DirectAccessAllowed
-            //     .Where (assembly => assembly.IsDefined (typeof (SearchableAttribute), true))
-            //     .ToList ();
-
-            // foreach (var assembly in searchables) {
-            //     foreach (var searchableAttribute in assembly.GetCustomAttributes<SearchableAttribute> ()) {
-            //         var accessPath = searchableAttribute.AccessPath.Trim ().Split (" > ");
-
-            //         var searchable = new Searchable ();
-            //         searchable.ResourceType = assembly.GetType ();
-            //         searchable.PropertyName = accessPath[accessPath.Length - 1];
-            //         searchable.AccessExpression = CreateAccessPath (assembly, accessPath);
-            //     }
-            // }
         }
-
-        public Expression GetPropertySearchAttribute (string resource, string property) =>
-            Searchables
-            .Where (searchable =>
-                searchable.ResourceType.Name.Equals (resource) &&
-                searchable.PropertyName.Equals (property))
-            .Select (searchable => searchable.AccessExpression)
-            .FirstOrDefault ();
 
         public Type GetResourceType (string resource) =>
             DirectAccessAllowed
